@@ -16,7 +16,7 @@ Users do not need to install Node.js, Electron, Android Studio, Java, Visual Stu
 
 - In Twine, select **Build → Publish to File**, then upload the generated HTML file.
 - Upload images, music, videos, fonts, and scripts together with the HTML while preserving their original relative paths.
-- Without Android release signing, the workflow only produces a debug APK intended for testing.
+- APK builds can be `debug` or `release`; release prefers the user's signing key and otherwise uses the public template test key.
 - Without Windows code signing, the EXE still runs, but SmartScreen may show an “Unknown publisher” warning.
 - Use a private GitHub repository for private or unreleased stories.
 
@@ -172,12 +172,19 @@ The recommended size is `1024 × 1024`. The same `icon` setting automatically ge
 | `apk` | Android APK |
 | `all` | Build EXE and APK together |
 
+When the target includes APK, also choose `apk_variant`:
+
+| Option | Behavior | Output |
+|---|---|---|
+| `debug` | Android debug build; custom signing settings are ignored | `app-debug.apk` |
+| `release` | Optimized release build; uses the user's key when available, otherwise the public template test key | `app-release.apk` or `app-release-test-signed.apk` |
+
 5. When the build finishes, download the results from **Artifacts** at the bottom of the workflow run page.
 
 Artifacts are retained for 14 days by default:
 
 - `windows-exe`
-- `android-apk`
+- `android-apk-debug` or `android-apk-release`
 
 ## Windows output
 
@@ -191,15 +198,25 @@ When `windows.protectMedia` is enabled, images, audio, video, and fonts in the W
 
 This feature prevents casual extraction and browsing of assets; it is not unbreakable DRM. The decryption key must ship with the application, so a skilled reverse engineer may still recover the key and assets. Android APK media protection is not currently enabled.
 
-## Android APK and release signing
+## Android APK builds and signing
 
-Without signing configuration, the workflow creates an installable test package:
+Select `apk_variant: debug` to create:
 
 ```text
 app-debug.apk
 ```
 
-It is not suitable for app stores or long-term public distribution. For a release build, prepare a JKS keystore and add the following repository secrets under:
+The debug package is installable for testing, but is not suitable for app stores or long-term public distribution.
+
+Selecting `apk_variant: release` always produces a zipaligned, signed, and verified release APK:
+
+- When all four signing secrets exist, the user's key is used and the output is `app-release.apk`.
+- When none of the secrets exist, the repository's fixed public test key is used and the output is `app-release-test-signed.apk`.
+- Supplying only some secrets fails the build to prevent accidental mis-signing.
+
+The public test key only gives zero-configuration users a stable identity for installing later test builds over earlier ones. Its private key is visible to everyone, cannot prove authorship, and must never be used for an app store, production release, or any trusted-identity purpose.
+
+For production, prepare your own JKS keystore and add these repository secrets under:
 
 ```text
 Settings → Secrets and variables → Actions
@@ -212,7 +229,7 @@ Settings → Secrets and variables → Actions
 | `ANDROID_KEY_ALIAS` | Key alias |
 | `ANDROID_KEY_PASSWORD` | Key password |
 
-After all secrets are configured, the workflow additionally creates and verifies `app-release.apk`. Keep encrypted, permanent backups of the keystore and passwords. Future updates to the same application must continue to use a compatible signing key.
+After all secrets are configured, the release workflow creates and verifies `app-release.apk`. Keep encrypted, permanent backups of the keystore and passwords. Future updates to the same application must continue to use a compatible signing key. Android will normally require uninstalling the test-key build when switching to your production key.
 
 Convert a JKS file to single-line Base64 in PowerShell:
 
@@ -220,7 +237,7 @@ Convert a JKS file to single-line Base64 in PowerShell:
 [Convert]::ToBase64String([IO.File]::ReadAllBytes("release.jks"))
 ```
 
-Never commit `.jks`, `.keystore`, `.pfx`, or password files to the repository.
+Never commit your own `.jks`, `.keystore`, `.pfx`, or password files. The repository's `resources/template-test-signing.pfx` is an intentionally public template test key, not a secret.
 
 ## Network resources and offline use
 

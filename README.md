@@ -16,7 +16,7 @@
 
 - 在 Twine 中选择 **Build → Publish to File / 发布到文件**，上传生成的 HTML 文件。
 - 图片、音乐、视频、字体和脚本需要一起上传，并保持 HTML 原有的相对路径。
-- 未配置 Android 正式签名时，只生成适合测试的 debug APK。
+- APK 可选择 `debug` 或 `release`；release 优先使用用户签名，未配置时使用公开模板测试签名。
 - 未配置 Windows 代码签名时，EXE 仍可运行，但 SmartScreen 可能显示“未知发布者”。
 - 私人或尚未公开的故事应使用 GitHub Private 仓库。
 
@@ -172,12 +172,19 @@ resources/icon.png
 | `apk` | Android APK |
 | `all` | 同时构建 EXE 和 APK |
 
+如果目标包含 APK，再选择 `apk_variant`：
+
+| 选项 | 行为 | 产物 |
+|---|---|---|
+| `debug` | Android 调试构建，不读取自定义签名 | `app-debug.apk` |
+| `release` | 优化的 release 构建；优先使用用户签名，否则使用公开模板测试签名 | `app-release.apk` 或 `app-release-test-signed.apk` |
+
 5. 构建完成后，在运行页面底部的 **Artifacts** 下载结果。
 
 Artifact 默认保留 14 天：
 
 - `windows-exe`
-- `android-apk`
+- `android-apk-debug` 或 `android-apk-release`
 
 ## Windows 产物
 
@@ -191,15 +198,25 @@ Electron 必须携带 Chromium，因此安装包通常仍有约 80–130 MB，�
 
 该功能用于防止普通用户直接解压安装包或 ASAR 后浏览素材，不是不可破解的 DRM。解密密钥必须随应用发布，专业逆向仍可能恢复密钥和素材。Android APK 当前不启用这项媒体保护。
 
-## Android APK 与正式签名
+## Android APK 构建与签名
 
-未设置签名时生成可直接安装测试的：
+运行工作流时选择 `apk_variant: debug`，会生成：
 
 ```text
 app-debug.apk
 ```
 
-它不适合应用商店或长期正式分发。正式发布需准备 JKS keystore，并在：
+debug 包可直接安装测试，但不适合应用商店或长期正式分发。
+
+选择 `apk_variant: release` 后一定会生成经过 zipalign、签名并验证的 release APK：
+
+- 四个签名 Secrets 全部存在时，使用用户自己的密钥，产物为 `app-release.apk`。
+- 四个 Secrets 全部不存在时，使用仓库公开的固定测试密钥，产物为 `app-release-test-signed.apk`。
+- 只配置一部分 Secrets 时构建会失败，防止错误签名。
+
+公开测试密钥只能让无配置用户稳定安装和覆盖后续测试版本。私钥对所有人可见，不能证明作者身份，禁止用于应用商店、正式发布或任何需要可信身份的场景。
+
+正式发布需准备自己的 JKS keystore，并在：
 
 ```text
 Settings → Secrets and variables → Actions
@@ -214,7 +231,7 @@ Settings → Secrets and variables → Actions
 | `ANDROID_KEY_ALIAS` | 密钥别名 |
 | `ANDROID_KEY_PASSWORD` | 密钥密码 |
 
-配置完整后，工作流会额外生成并验证 `app-release.apk`。请永久、加密备份 keystore 和密码；同一应用的后续更新必须继续使用兼容的签名密钥。
+配置完整后，release 工作流会生成并验证 `app-release.apk`。请永久、加密备份 keystore 和密码；同一应用的后续更新必须继续使用兼容的签名密钥。从模板测试签名切换到正式签名时，Android 通常要求先卸载测试版。
 
 PowerShell 转换单行 Base64：
 
@@ -222,7 +239,7 @@ PowerShell 转换单行 Base64：
 [Convert]::ToBase64String([IO.File]::ReadAllBytes("release.jks"))
 ```
 
-不要把 `.jks`、`.keystore`、`.pfx` 或密码提交到仓库。
+不要把你自己的 `.jks`、`.keystore`、`.pfx` 或密码提交到仓库。仓库中的 `resources/template-test-signing.pfx` 是特意公开的模板测试密钥，不是秘密。
 
 ## 网络资源与离线运行
 

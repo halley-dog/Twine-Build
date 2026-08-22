@@ -12,6 +12,14 @@ on:
           - all
           - exe
           - apk
+      apk_variant:
+        description: APK variant (used when target includes apk)
+        required: true
+        default: debug
+        type: choice
+        options:
+          - debug
+          - release
   push:
     branches: [main]
     paths:
@@ -60,6 +68,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
+      APK_VARIANT: ${{ github.event_name == 'workflow_dispatch' && inputs.apk_variant || 'debug' }}
       ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
       ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
       ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
@@ -85,34 +94,58 @@ jobs:
         run: npx cap add android
       - name: Configure Android fullscreen and icons
         run: npm run android:configure
-      - name: Build installable debug APK
+      - name: Build debug APK
+        if: env.APK_VARIANT == 'debug'
         working-directory: android
         run: ./gradlew assembleDebug
+      - name: Validate release signing settings
+        if: env.APK_VARIANT == 'release'
+        shell: bash
+        run: |
+          supplied=0
+          for value in "$ANDROID_KEYSTORE_BASE64" "$ANDROID_KEYSTORE_PASSWORD" "$ANDROID_KEY_ALIAS" "$ANDROID_KEY_PASSWORD"; do
+            if [ -n "$value" ]; then supplied=$((supplied + 1)); fi
+          done
+          if [ "$supplied" -ne 0 ] && [ "$supplied" -ne 4 ]; then
+            echo 'Release signing is incomplete. Set all four ANDROID_* secrets or remove all four to use the public test key.' >&2
+            exit 1
+          fi
       - name: Build unsigned release APK
-        if: env.ANDROID_KEYSTORE_BASE64 != ''
+        if: env.APK_VARIANT == 'release'
         working-directory: android
         run: ./gradlew assembleRelease
       - name: Sign release APK
-        if: env.ANDROID_KEYSTORE_BASE64 != ''
+        if: env.APK_VARIANT == 'release'
         shell: bash
         run: |
           mkdir -p release/apk signing
-          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > signing/release.jks
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
+            printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > signing/release-keystore
+            output='release/apk/app-release.apk'
+            echo '[OK] Using the repository owner custom release signing key.'
+          else
+            cp resources/template-test-signing.pfx signing/release-keystore
+            ANDROID_KEYSTORE_PASSWORD='twine-public-test-key'
+            ANDROID_KEY_ALIAS='twine-template-test'
+            ANDROID_KEY_PASSWORD='twine-public-test-key'
+            output='release/apk/app-release-test-signed.apk'
+            echo '[WARN] Using the PUBLIC template test key. Do not publish this APK to an app store.'
+          fi
           BUILD_TOOLS="$(find "$ANDROID_SDK_ROOT/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
           "$BUILD_TOOLS/zipalign" -p -f 4 android/app/build/outputs/apk/release/app-release-unsigned.apk release/apk/app-release-aligned.apk
-          "$BUILD_TOOLS/apksigner" sign --ks signing/release.jks --ks-key-alias "$ANDROID_KEY_ALIAS" --ks-pass "env:ANDROID_KEYSTORE_PASSWORD" --key-pass "env:ANDROID_KEY_PASSWORD" --out release/apk/app-release.apk release/apk/app-release-aligned.apk
-          "$BUILD_TOOLS/apksigner" verify --verbose release/apk/app-release.apk
+          "$BUILD_TOOLS/apksigner" sign --ks signing/release-keystore --ks-key-alias "$ANDROID_KEY_ALIAS" --ks-pass "env:ANDROID_KEYSTORE_PASSWORD" --key-pass "env:ANDROID_KEY_PASSWORD" --out "$output" release/apk/app-release-aligned.apk
+          "$BUILD_TOOLS/apksigner" verify --verbose --print-certs "$output"
           rm -rf signing release/apk/app-release-aligned.apk
       - name: Collect debug APK
+        if: env.APK_VARIANT == 'debug'
         shell: bash
         run: |
           mkdir -p release/apk
           cp android/app/build/outputs/apk/debug/app-debug.apk release/apk/app-debug.apk
-          cp dist-web/build-report.json release/apk/build-report.json
       - name: Upload APK
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: android-apk
-          path: release/apk/*
+          name: android-apk-${{ env.APK_VARIANT }}
+          path: release/apk/*.apk
           if-no-files-found: error
           retention-days: 14
