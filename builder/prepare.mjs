@@ -55,6 +55,19 @@ if (!errors.length) {
   if (uniqueRemote.length && !config.security?.allowNetwork) {
     warn(`发现 ${uniqueRemote.length} 个远程地址；当前 allowNetwork=false，运行时请求会被阻止。`);
   }
+  const localMedia = [
+    ...html.matchAll(/(?:src|href|poster)\s*=\s*["']([^"']+)["']/gi),
+    ...html.matchAll(/["']([^"']+\.(?:png|jpe?g|webp|gif|svg|bmp|mp3|ogg|wav|m4a|aac|flac|mp4|webm|mov|woff2?|ttf|otf)(?:[?#][^"']*)?)["']/gi)
+  ].map(match => match[1])
+    .filter(value => !/^(?:data:|blob:|https?:|#|\$\{)/i.test(value));
+  const missingMedia = [...new Set(localMedia)].filter(value => {
+    const clean = value.split(/[?#]/, 1)[0];
+    try { return !fs.existsSync(path.resolve(path.dirname(sourcePath), decodeURIComponent(clean))); }
+    catch { return true; }
+  });
+  if (missingMedia.length) {
+    warn(`发现 ${missingMedia.length} 个未上传或路径不匹配的媒体文件：${missingMedia.slice(0, 12).join(', ')}${missingMedia.length > 12 ? ' …' : ''}`);
+  }
 }
 
 for (const message of warnings) console.warn(`[WARN] ${message}`);
@@ -75,9 +88,10 @@ const excluded = new Set([
   'resources', 'signing', 'package.json', 'package-lock.json', 'twine-build.json',
   'capacitor.config.json', '.gitignore', 'README.md', 'LICENSE'
 ]);
-for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
-  if (excluded.has(entry.name)) continue;
-  const from = path.join(root, entry.name);
+const sourceDirectory = path.dirname(sourcePath);
+for (const entry of fs.readdirSync(sourceDirectory, { withFileTypes: true })) {
+  if (sourceDirectory === root && excluded.has(entry.name)) continue;
+  const from = path.join(sourceDirectory, entry.name);
   const to = path.join(output, entry.name);
   fs.cpSync(from, to, { recursive: true, force: true });
 }

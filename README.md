@@ -90,6 +90,9 @@ HTML 中应使用：
     "iconBackgroundColor": "#ffffff",
     "iconBackgroundColorDark": "#111111"
   },
+  "windows": {
+    "protectMedia": true
+  },
   "security": {
     "allowNetwork": false,
     "openExternalLinks": true
@@ -106,6 +109,7 @@ HTML 中应使用：
 | `publisher` | 作者或工作室名称 |
 | `source` | Twine HTML 入口，通常无需修改 |
 | `android.immersive` | 隐藏 Android 状态栏和导航栏；边缘滑动可临时呼出 |
+| `windows.protectMedia` | 在 Windows 包内使用 AES-256-GCM 保护媒体和字体 |
 | `allowNetwork` | 是否允许故事加载远程资源 |
 | `openExternalLinks` | 是否用系统浏览器打开 HTTPS 外链 |
 
@@ -143,7 +147,15 @@ Artifact 默认保留 14 天：
 
 ## Windows 产物
 
-`windows-exe` 包括 NSIS 安装程序和免安装 ZIP。安装器默认按当前用户安装，不强制要求管理员权限；卸载时不会主动删除 Electron 用户数据目录，以免误删游戏存档。
+`windows-exe` Artifact 只包含一个 NSIS 安装程序。GitHub 下载 Artifact 时固定会在外面套一层 ZIP，解压后只需保留其中的 `.exe`。安装器默认按当前用户安装，不强制要求管理员权限；卸载时不会主动删除 Electron 用户数据目录，以免误删游戏存档。
+
+Electron 必须携带 Chromium，因此安装包通常仍有约 80–130 MB，即使 Twine HTML 很小也不会只有几 MB。
+
+## Windows 媒体保护
+
+启用 `windows.protectMedia` 后，图片、音频、视频和字体在 Windows 包内会使用 AES-256-GCM 加密，应用运行时通过内部 `twine://` 协议按需解密，不影响 HTML 中原有相对路径。HTML、CSS 和 JavaScript 不加密。
+
+该功能用于防止普通用户直接解压安装包或 ASAR 后浏览素材，不是不可破解的 DRM。解密密钥必须随应用发布，专业逆向仍可能恢复密钥和素材。Android APK 当前不启用这项媒体保护。
 
 ## Android APK 与正式签名
 

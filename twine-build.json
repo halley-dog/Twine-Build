@@ -22,6 +22,9 @@
     "iconBackgroundColor": "#ffffff",
     "iconBackgroundColorDark": "#111111"
   },
+  "windows": {
+    "protectMedia": true
+  },
   "security": {
     "allowNetwork": false,
     "openExternalLinks": true

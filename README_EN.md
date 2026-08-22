@@ -90,6 +90,9 @@ Edit `twine-build.json` in the repository root:
     "iconBackgroundColor": "#ffffff",
     "iconBackgroundColorDark": "#111111"
   },
+  "windows": {
+    "protectMedia": true
+  },
   "security": {
     "allowNetwork": false,
     "openExternalLinks": true
@@ -106,6 +109,7 @@ Edit `twine-build.json` in the repository root:
 | `publisher` | Author or studio name |
 | `source` | Twine HTML entry point; normally does not need to be changed |
 | `android.immersive` | Hide Android status and navigation bars; edge swipes reveal them temporarily |
+| `windows.protectMedia` | Protect media and fonts in Windows packages with AES-256-GCM |
 | `allowNetwork` | Whether the story may load remote resources |
 | `openExternalLinks` | Whether HTTPS links may open in the system browser |
 
@@ -143,7 +147,15 @@ Artifacts are retained for 14 days by default:
 
 ## Windows output
 
-`windows-exe` contains an NSIS installer and a portable ZIP. The installer is per-user by default and does not require administrator privileges. Uninstalling does not automatically remove Electron's user-data directory, which helps prevent accidental deletion of game saves.
+The `windows-exe` artifact contains only one NSIS installer. GitHub always wraps downloaded artifacts in an outer ZIP; after extracting it, keep the `.exe`. The installer is per-user by default and does not require administrator privileges. Uninstalling does not automatically remove Electron's user-data directory, which helps prevent accidental deletion of game saves.
+
+Electron must include Chromium, so the installer is normally still around 80–130 MB even when the Twine HTML is small.
+
+## Windows media protection
+
+When `windows.protectMedia` is enabled, images, audio, video, and fonts in the Windows package are encrypted with AES-256-GCM. At runtime, the application decrypts them on demand through its internal `twine://` protocol, without changing existing relative paths in the HTML. HTML, CSS, and JavaScript are not encrypted.
+
+This feature prevents casual extraction and browsing of assets; it is not unbreakable DRM. The decryption key must ship with the application, so a skilled reverse engineer may still recover the key and assets. Android APK media protection is not currently enabled.
 
 ## Android APK and release signing
 

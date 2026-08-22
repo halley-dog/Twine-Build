@@ -47,11 +47,11 @@ jobs:
         run: npm ci
       - name: Validate and build EXE
         run: npm run build:exe
-      - name: Upload EXE and portable ZIP
+      - name: Upload Windows installer
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: windows-exe
-          path: release/exe/*
+          path: release/exe/*.exe
           if-no-files-found: error
           retention-days: 14
 
