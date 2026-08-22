@@ -1,12 +1,12 @@
 {
-  "name": "通缉坎伯兰",
-  "executableName": "Wanted_Cumberland",
-  "appId": "com.demu.Wanted_Cumberland",
-  "version": "0.1.0",
+  "name": "My Twine Story",
+  "executableName": "My-Twine-Story",
+  "appId": "com.example.mytwinestory",
+  "version": "1.0.0",
   "description": "An interactive story built with Twine",
-  "publisher": "demu",
+  "publisher": "Twine Author",
   "source": "game/index.html",
-  "icon": "game/img/logo/logo.png",
+  "icon": "resources/icon.png",
   "targets": ["exe", "apk"],
   "window": {
     "width": 1280,

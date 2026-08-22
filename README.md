@@ -100,18 +100,52 @@ HTML 中应使用：
 }
 ```
 
-| 字段 | 说明 |
-|---|---|
-| `name` | 应用显示名称，可以使用中文 |
-| `executableName` | Windows 文件名，建议使用英文、数字和连字符 |
-| `appId` | 唯一应用标识，例如 `com.author.storyname` |
-| `version` | `1.0.0` 格式的版本号 |
-| `publisher` | 作者或工作室名称 |
-| `source` | Twine HTML 入口，通常无需修改 |
-| `android.immersive` | 隐藏 Android 状态栏和导航栏；边缘滑动可临时呼出 |
-| `windows.protectMedia` | 在 Windows 包内使用 AES-256-GCM 保护媒体和字体 |
-| `allowNetwork` | 是否允许故事加载远程资源 |
-| `openExternalLinks` | 是否用系统浏览器打开 HTTPS 外链 |
+### 基本参数
+
+| 参数 | 类型 | 默认值 | 含义 |
+|---|---|---|---|
+| `name` | 字符串 | `My Twine Story` | 安装后显示的应用名称，可以使用中文 |
+| `executableName` | 字符串 | `My-Twine-Story` | Windows 主程序和安装包文件名，不含扩展名；建议只用英文、数字、`-`、`_` |
+| `appId` | 字符串 | `com.example.mytwinestory` | Android 应用唯一标识，也是升级识别依据；应采用反向域名格式，发布后不要修改 |
+| `version` | 字符串 | `1.0.0` | 应用版本号，必须采用 `主版本.次版本.修订号` 格式 |
+| `description` | 字符串 | 示例说明 | Windows 包元数据中的应用简介 |
+| `publisher` | 字符串 | `Twine Author` | 作者、发行者或工作室名称，写入 Windows 元数据 |
+| `source` | 路径 | `game/index.html` | Twine 发布 HTML 的入口文件；相对仓库根目录 |
+| `icon` | 路径 | `resources/icon.png` | Windows/Android 共用图标源；推荐透明或方形 1024×1024 PNG |
+| `targets` | 字符串数组 | `["exe", "apk"]` | 声明项目计划支持的目标；Actions 手动构建时仍以 `exe/apk/all` 下拉选择为准 |
+
+### `window`：Windows 窗口参数
+
+| 参数 | 类型 | 默认值 | 含义 |
+|---|---|---|---|
+| `window.width` | 整数 | `1280` | 初始窗口宽度，单位为 CSS 像素 |
+| `window.height` | 整数 | `800` | 初始窗口高度，单位为 CSS 像素 |
+| `window.minWidth` | 整数 | `720` | 用户可缩小到的最小宽度 |
+| `window.minHeight` | 整数 | `480` | 用户可缩小到的最小高度 |
+| `window.resizable` | 布尔值 | `true` | 是否允许用户调整窗口大小 |
+| `window.startMaximized` | 布尔值 | `false` | 是否启动后最大化；优先于普通宽高显示 |
+| `window.fullscreen` | 布尔值 | `false` | 是否以 Windows 全屏模式启动 |
+
+### `android`：Android 参数
+
+| 参数 | 类型 | 默认值 | 含义 |
+|---|---|---|---|
+| `android.immersive` | 布尔值 | `true` | 隐藏状态栏和导航栏；从屏幕边缘滑动可临时呼出系统栏 |
+| `android.iconBackgroundColor` | 颜色字符串 | `#ffffff` | Android 自适应图标在浅色模式下的背景色 |
+| `android.iconBackgroundColorDark` | 颜色字符串 | `#111111` | Android 自适应图标在深色模式下的背景色；当前生成器保留该参数用于兼容后续深色图标输出 |
+
+### `windows`：Windows 打包参数
+
+| 参数 | 类型 | 默认值 | 含义 |
+|---|---|---|---|
+| `windows.protectMedia` | 布尔值 | `true` | 使用 AES-256-GCM 加密 Windows 包中的图片、音频、视频和字体；HTML/CSS/JS 不加密 |
+
+### `security`：运行安全参数
+
+| 参数 | 类型 | 默认值 | 含义 |
+|---|---|---|---|
+| `security.allowNetwork` | 布尔值 | `false` | 是否允许故事在应用内请求 HTTP/HTTPS 远程资源；离线故事建议保持关闭 |
+| `security.openExternalLinks` | 布尔值 | `true` | 玩家点击 HTTP/HTTPS 外链时，是否交给系统默认浏览器打开 |
 
 `appId` 发布后不要更改，否则 Android 会把新包视为另一款应用，无法正常覆盖升级。
 

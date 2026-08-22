@@ -100,18 +100,52 @@ Edit `twine-build.json` in the repository root:
 }
 ```
 
-| Field | Description |
-|---|---|
-| `name` | Display name of the application; non-Latin characters are supported |
-| `executableName` | Windows filename; letters, numbers, and hyphens are recommended |
-| `appId` | Unique application identifier, such as `com.author.storyname` |
-| `version` | Version number in `1.0.0` format |
-| `publisher` | Author or studio name |
-| `source` | Twine HTML entry point; normally does not need to be changed |
-| `android.immersive` | Hide Android status and navigation bars; edge swipes reveal them temporarily |
-| `windows.protectMedia` | Protect media and fonts in Windows packages with AES-256-GCM |
-| `allowNetwork` | Whether the story may load remote resources |
-| `openExternalLinks` | Whether HTTPS links may open in the system browser |
+### Basic settings
+
+| Setting | Type | Default | Meaning |
+|---|---|---|---|
+| `name` | string | `My Twine Story` | Installed application display name; non-Latin characters are supported |
+| `executableName` | string | `My-Twine-Story` | Windows executable and installer filename without an extension; letters, numbers, `-`, and `_` are recommended |
+| `appId` | string | `com.example.mytwinestory` | Unique Android identity and update identifier; use reverse-domain notation and never change it after release |
+| `version` | string | `1.0.0` | Application version in `major.minor.patch` format |
+| `description` | string | example text | Short application description stored in Windows package metadata |
+| `publisher` | string | `Twine Author` | Author, publisher, or studio name stored in Windows metadata |
+| `source` | path | `game/index.html` | Twine-published HTML entry point, relative to the repository root |
+| `icon` | path | `resources/icon.png` | Shared Windows/Android source icon; a transparent or square 1024×1024 PNG is recommended |
+| `targets` | string array | `["exe", "apk"]` | Declares intended project targets; manual Actions runs still use the `exe/apk/all` selector |
+
+### `window`: Windows window settings
+
+| Setting | Type | Default | Meaning |
+|---|---|---|---|
+| `window.width` | integer | `1280` | Initial window width in CSS pixels |
+| `window.height` | integer | `800` | Initial window height in CSS pixels |
+| `window.minWidth` | integer | `720` | Minimum width to which the user may resize the window |
+| `window.minHeight` | integer | `480` | Minimum height to which the user may resize the window |
+| `window.resizable` | boolean | `true` | Whether the window can be resized |
+| `window.startMaximized` | boolean | `false` | Start maximized instead of using the normal width and height |
+| `window.fullscreen` | boolean | `false` | Start in Windows fullscreen mode |
+
+### `android`: Android settings
+
+| Setting | Type | Default | Meaning |
+|---|---|---|---|
+| `android.immersive` | boolean | `true` | Hide status and navigation bars; edge swipes reveal them temporarily |
+| `android.iconBackgroundColor` | color string | `#ffffff` | Adaptive-icon background in light mode |
+| `android.iconBackgroundColorDark` | color string | `#111111` | Adaptive-icon background in dark mode; retained for compatibility with future dark-icon output |
+
+### `windows`: Windows packaging settings
+
+| Setting | Type | Default | Meaning |
+|---|---|---|---|
+| `windows.protectMedia` | boolean | `true` | Encrypt images, audio, video, and fonts in Windows packages with AES-256-GCM; HTML/CSS/JS remain readable |
+
+### `security`: runtime security settings
+
+| Setting | Type | Default | Meaning |
+|---|---|---|---|
+| `security.allowNetwork` | boolean | `false` | Allow HTTP/HTTPS resources to load inside the application; keep disabled for offline stories |
+| `security.openExternalLinks` | boolean | `true` | Open clicked HTTP/HTTPS links in the system's default browser |
 
 Do not change `appId` after publishing. Android will treat the new package as a different application and it will not update the previously installed version.
 
