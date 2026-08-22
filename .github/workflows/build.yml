@@ -28,7 +28,7 @@ permissions:
 
 concurrency:
   group: twine-build-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   exe:
@@ -83,6 +83,8 @@ jobs:
         run: npm run prepare:web
       - name: Generate Android project
         run: npx cap add android
+      - name: Configure Android fullscreen and icons
+        run: npm run android:configure
       - name: Build installable debug APK
         working-directory: android
         run: ./gradlew assembleDebug

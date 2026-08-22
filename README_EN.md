@@ -85,6 +85,11 @@ Edit `twine-build.json` in the repository root:
     "startMaximized": false,
     "fullscreen": false
   },
+  "android": {
+    "immersive": true,
+    "iconBackgroundColor": "#ffffff",
+    "iconBackgroundColorDark": "#111111"
+  },
   "security": {
     "allowNetwork": false,
     "openExternalLinks": true
@@ -100,6 +105,7 @@ Edit `twine-build.json` in the repository root:
 | `version` | Version number in `1.0.0` format |
 | `publisher` | Author or studio name |
 | `source` | Twine HTML entry point; normally does not need to be changed |
+| `android.immersive` | Hide Android status and navigation bars; edge swipes reveal them temporarily |
 | `allowNetwork` | Whether the story may load remote resources |
 | `openExternalLinks` | Whether HTTPS links may open in the system browser |
 
@@ -113,7 +119,7 @@ Upload a square PNG icon as:
 resources/icon.png
 ```
 
-The recommended size is `1024 × 1024`. Without an icon, Windows uses Electron's default icon and Android uses Capacitor's default icon.
+The recommended size is `1024 × 1024`. The same `icon` setting automatically generates the required Windows and Android icons. Platform defaults are used when no icon exists. Set adaptive-icon backgrounds with `android.iconBackgroundColor` and `android.iconBackgroundColorDark`.
 
 ## 5. Run a build
 
@@ -194,6 +200,10 @@ npm run build:exe
 ### Images or audio are missing
 
 Confirm that the files were uploaded inside `game/` and that the letter case of every HTML path exactly matches the real filename.
+
+### Android shows system bars at the top or bottom
+
+Confirm that `android.immersive` is `true` and install an APK built after changing the setting. Immersive mode hides the status and navigation bars; swiping from a screen edge can still reveal system controls temporarily.
 
 ### GitHub Actions did not run
 

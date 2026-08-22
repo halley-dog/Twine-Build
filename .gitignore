@@ -3,6 +3,7 @@ dist-web/
 release/
 android/
 capacitor.config.json
+.generated-android-assets/
 /index.html
 *.log
 .DS_Store

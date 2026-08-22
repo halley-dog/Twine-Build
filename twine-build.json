@@ -17,6 +17,11 @@
     "startMaximized": false,
     "fullscreen": false
   },
+  "android": {
+    "immersive": true,
+    "iconBackgroundColor": "#ffffff",
+    "iconBackgroundColorDark": "#111111"
+  },
   "security": {
     "allowNetwork": false,
     "openExternalLinks": true

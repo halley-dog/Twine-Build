@@ -14,7 +14,7 @@
 
 ## 使用前须知
 
-- 在 Twine 中选择 **Build → Publish to File / 发布到文件**，上传生成的HTML文件。
+- 在 Twine 中选择 **Build → Publish to File / 发布到文件**，上传生成的 HTML 文件。
 - 图片、音乐、视频、字体和脚本需要一起上传，并保持 HTML 原有的相对路径。
 - 未配置 Android 正式签名时，只生成适合测试的 debug APK。
 - 未配置 Windows 代码签名时，EXE 仍可运行，但 SmartScreen 可能显示“未知发布者”。
@@ -85,6 +85,11 @@ HTML 中应使用：
     "startMaximized": false,
     "fullscreen": false
   },
+  "android": {
+    "immersive": true,
+    "iconBackgroundColor": "#ffffff",
+    "iconBackgroundColorDark": "#111111"
+  },
   "security": {
     "allowNetwork": false,
     "openExternalLinks": true
@@ -100,6 +105,7 @@ HTML 中应使用：
 | `version` | `1.0.0` 格式的版本号 |
 | `publisher` | 作者或工作室名称 |
 | `source` | Twine HTML 入口，通常无需修改 |
+| `android.immersive` | 隐藏 Android 状态栏和导航栏；边缘滑动可临时呼出 |
 | `allowNetwork` | 是否允许故事加载远程资源 |
 | `openExternalLinks` | 是否用系统浏览器打开 HTTPS 外链 |
 
@@ -113,7 +119,7 @@ HTML 中应使用：
 resources/icon.png
 ```
 
-建议尺寸 `1024 × 1024`。没有图标时，Windows 使用 Electron 默认图标，Android 使用 Capacitor 默认图标。
+建议尺寸 `1024 × 1024`。同一个 `icon` 配置会自动生成 Windows 和 Android 所需图标；没有图标时使用平台默认图标。Android 自适应图标的背景色可通过 `android.iconBackgroundColor` 和 `android.iconBackgroundColorDark` 设置。
 
 ## 5. 运行打包
 
@@ -196,6 +202,10 @@ npm run build:exe
 ### 图片或音乐丢失
 
 确认文件已经上传到 `game/`，并且 HTML 路径与实际文件名大小写完全一致。
+
+### Android 顶部或底部出现系统栏
+
+确认 `android.immersive` 为 `true`，并使用修改配置后新构建的 APK。沉浸模式会隐藏状态栏和导航栏，从屏幕边缘滑动仍可临时呼出系统控件。
 
 ### Actions 没有运行
 
