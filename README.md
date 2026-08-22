@@ -12,7 +12,7 @@
 
 ## 使用前须知
 
-- 在 Twine 中选择 **Build → Publish to File / 发布到文件**，不要上传临时播放页面。
+- 在 Twine 中选择 **Build → Publish to File / 发布到文件**，上传生成的HTML文件。
 - 图片、音乐、视频、字体和脚本需要一起上传，并保持 HTML 原有的相对路径。
 - 未配置 Android 正式签名时，只生成适合测试的 debug APK。
 - 未配置 Windows 代码签名时，EXE 仍可运行，但 SmartScreen 可能显示“未知发布者”。
