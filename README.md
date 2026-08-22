@@ -5,7 +5,6 @@
 通过 GitHub Actions 将 Twine 发布的 HTML 一键打包成：
 
 - Windows 安装程序 `.exe`
-- Windows 免安装版 `.zip`
 - Android 安装包 `.apk`
 
 使用者不需要安装 Node.js、Electron、Android Studio、Java、Visual Studio 等开发环境；构建工作全部由 GitHub 的云端 runner 完成。
@@ -168,7 +167,7 @@ resources/icon.png
 
 | 选项 | 产物 |
 |---|---|
-| `exe` | Windows 安装 EXE 和免安装 ZIP |
+| `exe` | Windows 安装程序 EXE |
 | `apk` | Android APK |
 | `all` | 同时构建 EXE 和 APK |
 
@@ -183,7 +182,7 @@ resources/icon.png
 
 5. 构建完成后，在运行页面底部的 **Artifacts** 下载结果。
 
-Artifact 默认保留 14 天：
+构建产物默认保留 14 天：
 
 - `windows-exe`
 - `android-apk-debug` 或 `android-apk-release`
@@ -218,7 +217,56 @@ debug 包可直接安装测试，但不适合应用商店或长期正式分发�
 
 公开测试密钥只能让无配置用户稳定安装和覆盖后续测试版本。私钥对所有人可见，不能证明作者身份，禁止用于应用商店、正式发布或任何需要可信身份的场景。
 
-正式发布需准备自己的 JKS keystore，并在：
+### 在 Windows 本地生成正式签名
+
+生成签名只需要 JDK，不需要安装 Android Studio。先在 PowerShell 检查：
+
+```powershell
+keytool -help
+```
+
+如果找不到 `keytool`，可安装 JDK 21：
+
+```powershell
+winget install EclipseAdoptium.Temurin.21.JDK
+```
+
+安装后关闭并重新打开 PowerShell。然后在仓库之外创建密钥；以下示例会在 `E:\Twine-Signing` 中生成有效期约 27 年的 RSA 4096 位 JKS：
+
+```powershell
+New-Item -ItemType Directory -Force "E:\Twine-Signing"
+Set-Location "E:\Twine-Signing"
+keytool -genkeypair -v `
+  -keystore "twine-release.jks" `
+  -storetype JKS `
+  -alias "twine-release" `
+  -keyalg RSA `
+  -keysize 4096 `
+  -validity 10000
+```
+
+根据提示设置密钥库密码、证书信息和密钥密码。请记住别名 `twine-release`，并永久保存密钥库及密码；同一 Android 应用的后续更新必须继续使用同一签名密钥。
+
+检查生成结果和证书指纹：
+
+```powershell
+keytool -list -v `
+  -keystore "E:\Twine-Signing\twine-release.jks" `
+  -alias "twine-release"
+```
+
+把 JKS 转为可粘贴到 GitHub Secret 的单行 Base64，并复制到剪贴板：
+
+```powershell
+$signingFile = "E:\Twine-Signing\twine-release.jks"
+$signingBase64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes($signingFile))
+$signingBase64 | Set-Content -NoNewline "E:\Twine-Signing\twine-release-base64.txt"
+$signingBase64 | Set-Clipboard
+```
+
+### 添加 GitHub Actions Secrets
+
+在自己的仓库中打开：
 
 ```text
 Settings → Secrets and variables → Actions
@@ -230,37 +278,16 @@ Settings → Secrets and variables → Actions
 |---|---|
 | `ANDROID_KEYSTORE_BASE64` | JKS 文件的 Base64 内容 |
 | `ANDROID_KEYSTORE_PASSWORD` | keystore 密码 |
-| `ANDROID_KEY_ALIAS` | 密钥别名 |
+| `ANDROID_KEY_ALIAS` | `twine-release`，或生成密钥时使用的别名 |
 | `ANDROID_KEY_PASSWORD` | 密钥密码 |
 
 配置完整后，release 工作流会生成并验证 `app-release.apk`。请永久、加密备份 keystore 和密码；同一应用的后续更新必须继续使用兼容的签名密钥。从模板测试签名切换到正式签名时，Android 通常要求先卸载测试版。
-
-PowerShell 转换单行 Base64：
-
-```powershell
-[Convert]::ToBase64String([IO.File]::ReadAllBytes("release.jks"))
-```
 
 不要把你自己的 `.jks`、`.keystore`、`.pfx` 或密码提交到仓库。仓库中的 `resources/template-test-signing.pfx` 是特意公开的模板测试密钥，不是秘密。
 
 ## 网络资源与离线运行
 
 默认阻止故事加载远程图片、字体、脚本和接口，但玩家点击 HTTPS 外链时可以交给系统浏览器打开。建议将必需资源全部放进 `game/`。故事确实依赖联网功能时，才把 `allowNetwork` 改为 `true`。
-
-## 本地检查（可选）
-
-GitHub Actions 不要求本地环境。如果已安装 Node.js 24：
-
-```powershell
-npm ci
-npm run check
-```
-
-本地构建 Windows：
-
-```powershell
-npm run build:exe
-```
 
 ## 常见问题
 

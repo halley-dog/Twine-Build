@@ -5,7 +5,6 @@
 Package HTML files published by Twine with GitHub Actions into:
 
 - Windows `.exe` installer
-- Windows portable `.zip`
 - Android `.apk`
 
 Users do not need to install Node.js, Electron, Android Studio, Java, Visual Studio, or any other development environment. GitHub-hosted runners perform the entire build in the cloud.
@@ -168,7 +167,7 @@ The recommended size is `1024 × 1024`. The same `icon` setting automatically ge
 
 | Option | Output |
 |---|---|
-| `exe` | Windows installer EXE and portable ZIP |
+| `exe` | Windows installer EXE |
 | `apk` | Android APK |
 | `all` | Build EXE and APK together |
 
@@ -218,7 +217,56 @@ Selecting `apk_variant: release` always produces a zipaligned, signed, and verif
 
 The public test key only gives zero-configuration users a stable identity for installing later test builds over earlier ones. Its private key is visible to everyone, cannot prove authorship, and must never be used for an app store, production release, or any trusted-identity purpose.
 
-For production, prepare your own JKS keystore and add these repository secrets under:
+### Generate a production signing key on Windows
+
+Only a JDK is required to generate the key; Android Studio is not required. First check in PowerShell:
+
+```powershell
+keytool -help
+```
+
+If `keytool` is unavailable, install JDK 21:
+
+```powershell
+winget install EclipseAdoptium.Temurin.21.JDK
+```
+
+Close and reopen PowerShell after installation. Create the key outside the repository. This example creates a 4096-bit RSA JKS, valid for about 27 years, under `E:\Twine-Signing`:
+
+```powershell
+New-Item -ItemType Directory -Force "E:\Twine-Signing"
+Set-Location "E:\Twine-Signing"
+keytool -genkeypair -v `
+  -keystore "twine-release.jks" `
+  -storetype JKS `
+  -alias "twine-release" `
+  -keyalg RSA `
+  -keysize 4096 `
+  -validity 10000
+```
+
+Follow the prompts to set the keystore password, certificate details, and key password. Remember the `twine-release` alias and keep permanent backups of the keystore and passwords. Future updates to the same Android application must use the same signing key.
+
+Inspect the key and certificate fingerprints:
+
+```powershell
+keytool -list -v `
+  -keystore "E:\Twine-Signing\twine-release.jks" `
+  -alias "twine-release"
+```
+
+Convert the JKS to single-line Base64 and copy it to the clipboard:
+
+```powershell
+$signingFile = "E:\Twine-Signing\twine-release.jks"
+$signingBase64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes($signingFile))
+$signingBase64 | Set-Content -NoNewline "E:\Twine-Signing\twine-release-base64.txt"
+$signingBase64 | Set-Clipboard
+```
+
+### Add GitHub Actions secrets
+
+In your repository, open:
 
 ```text
 Settings → Secrets and variables → Actions
@@ -228,37 +276,16 @@ Settings → Secrets and variables → Actions
 |---|---|
 | `ANDROID_KEYSTORE_BASE64` | Base64 content of the JKS file |
 | `ANDROID_KEYSTORE_PASSWORD` | Keystore password |
-| `ANDROID_KEY_ALIAS` | Key alias |
+| `ANDROID_KEY_ALIAS` | `twine-release`, or the alias used when generating the key |
 | `ANDROID_KEY_PASSWORD` | Key password |
 
 After all secrets are configured, the release workflow creates and verifies `app-release.apk`. Keep encrypted, permanent backups of the keystore and passwords. Future updates to the same application must continue to use a compatible signing key. Android will normally require uninstalling the test-key build when switching to your production key.
-
-Convert a JKS file to single-line Base64 in PowerShell:
-
-```powershell
-[Convert]::ToBase64String([IO.File]::ReadAllBytes("release.jks"))
-```
 
 Never commit your own `.jks`, `.keystore`, `.pfx`, or password files. The repository's `resources/template-test-signing.pfx` is an intentionally public template test key, not a secret.
 
 ## Network resources and offline use
 
 By default, the packaged story cannot load remote images, fonts, scripts, or APIs, but HTTPS links clicked by the player may open in the system browser. Put all required resources inside `game/` whenever possible. Set `allowNetwork` to `true` only when the story genuinely requires online functionality.
-
-## Optional local checks
-
-GitHub Actions does not require a local development environment. If Node.js 24 is already installed, you can validate the project locally:
-
-```powershell
-npm ci
-npm run check
-```
-
-Build Windows locally with:
-
-```powershell
-npm run build:exe
-```
 
 ## Troubleshooting
 
