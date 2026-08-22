@@ -1,5 +1,7 @@
 # Twine Build
 
+[简体中文](README.md) | [English](README_EN.md)
+
 通过 GitHub Actions 将 Twine 发布的 HTML 一键打包成：
 
 - Windows 安装程序 `.exe`
