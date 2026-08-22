@@ -8,7 +8,7 @@
   "scripts": {
     "prepare:web": "node builder/prepare.mjs",
     "check": "node builder/prepare.mjs --check-only",
-    "build:exe": "npm run prepare:web && electron-builder --win nsis zip --x64 --config builder/electron-builder.cjs",
+    "build:exe": "npm run prepare:web && electron-builder --win nsis zip --x64 --publish never --config builder/electron-builder.cjs",
     "android:init": "npx cap add android",
     "android:sync": "npx cap sync android"
   },
