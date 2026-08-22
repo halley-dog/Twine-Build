@@ -126,7 +126,7 @@ jobs:
           else
             cp resources/template-test-signing.pfx signing/release-keystore
             ANDROID_KEYSTORE_PASSWORD='twine-public-test-key'
-            ANDROID_KEY_ALIAS='twine-template-test'
+            ANDROID_KEY_ALIAS='te-03c92390-5b31-4df6-8505-dda12fcda1ed'
             ANDROID_KEY_PASSWORD='twine-public-test-key'
             output='release/apk/app-release-test-signed.apk'
             echo '[WARN] Using the PUBLIC template test key. Do not publish this APK to an app store.'
