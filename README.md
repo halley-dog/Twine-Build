@@ -86,6 +86,7 @@ HTML 中应使用：
   },
   "android": {
     "immersive": true,
+    "fullscreenBackgroundColor": "#000000",
     "iconBackgroundColor": "#ffffff",
     "iconBackgroundColorDark": "#111111"
   },
@@ -130,6 +131,7 @@ HTML 中应使用：
 | 参数 | 类型 | 默认值 | 含义 |
 |---|---|---|---|
 | `android.immersive` | 布尔值 | `true` | 隐藏状态栏和导航栏；从屏幕边缘滑动可临时呼出系统栏 |
+| `android.fullscreenBackgroundColor` | 颜色字符串 | `#000000` | 刘海、系统栏过渡区或 WebView 尚未完成绘制时使用的全屏兜底背景色 |
 | `android.iconBackgroundColor` | 颜色字符串 | `#ffffff` | Android 自适应图标在浅色模式下的背景色 |
 | `android.iconBackgroundColorDark` | 颜色字符串 | `#111111` | Android 自适应图标在深色模式下的背景色；当前生成器保留该参数用于兼容后续深色图标输出 |
 
@@ -328,7 +330,7 @@ Settings → Secrets and variables → Actions
 
 ### Android 顶部或底部出现系统栏
 
-确认 `android.immersive` 为 `true`，并使用修改配置后新构建的 APK。沉浸模式会隐藏状态栏和导航栏，从屏幕边缘滑动仍可临时呼出系统控件。
+确认 `android.immersive` 为 `true`，并使用修改配置后新构建的 APK。构建器会启用 edge-to-edge、覆盖刘海区域，并自动给网页 viewport 添加 `viewport-fit=cover`。沉浸模式会隐藏状态栏和导航栏；从屏幕边缘滑动仍可临时呼出系统控件。页面尚未绘制时的边缘颜色由 `android.fullscreenBackgroundColor` 控制。
 
 ### Actions 没有运行
 

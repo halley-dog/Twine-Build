@@ -25,6 +25,9 @@ function findFile(directory, filename) {
 }
 
 if (config.android?.immersive !== false) {
+  const fullscreenBackground = /^#[0-9a-f]{6}$/i.test(config.android?.fullscreenBackgroundColor || '')
+    ? config.android.fullscreenBackgroundColor
+    : '#000000';
   const activityPath = findFile(path.join(androidRoot, 'app', 'src', 'main', 'java'), 'MainActivity.java');
   if (!activityPath) {
     console.error('[ERROR] 找不到 Android MainActivity.java。');
@@ -35,11 +38,11 @@ if (config.android?.immersive !== false) {
   if (!source.includes('TWINE_BUILD_IMMERSIVE')) {
     source = source.replace(
       'import com.getcapacitor.BridgeActivity;',
-      `import com.getcapacitor.BridgeActivity;\nimport android.os.Bundle;\nimport android.os.Build;\nimport android.view.WindowManager;\nimport androidx.core.view.WindowCompat;\nimport androidx.core.view.WindowInsetsCompat;\nimport androidx.core.view.WindowInsetsControllerCompat;`
+      `import com.getcapacitor.BridgeActivity;\nimport android.os.Bundle;\nimport android.os.Build;\nimport android.graphics.Color;\nimport android.view.WindowManager;\nimport androidx.core.view.WindowCompat;\nimport androidx.core.view.WindowInsetsCompat;\nimport androidx.core.view.WindowInsetsControllerCompat;`
     );
     source = source.replace(
       /public class MainActivity extends BridgeActivity\s*\{\s*\}/,
-      `public class MainActivity extends BridgeActivity {\n  // TWINE_BUILD_IMMERSIVE\n  private void hideSystemBars() {\n    WindowCompat.setDecorFitsSystemWindows(getWindow(), false);\n    WindowInsetsControllerCompat controller =\n        WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());\n    controller.hide(WindowInsetsCompat.Type.systemBars());\n    controller.setSystemBarsBehavior(\n        WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);\n  }\n\n  @Override\n  protected void onCreate(Bundle savedInstanceState) {\n    super.onCreate(savedInstanceState);\n    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {\n      WindowManager.LayoutParams attributes = getWindow().getAttributes();\n      attributes.layoutInDisplayCutoutMode =\n          WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;\n      getWindow().setAttributes(attributes);\n    }\n    hideSystemBars();\n  }\n\n  @Override\n  public void onWindowFocusChanged(boolean hasFocus) {\n    super.onWindowFocusChanged(hasFocus);\n    if (hasFocus) hideSystemBars();\n  }\n}`
+      `public class MainActivity extends BridgeActivity {\n  // TWINE_BUILD_IMMERSIVE\n  private void hideSystemBars() {\n    WindowCompat.setDecorFitsSystemWindows(getWindow(), false);\n    WindowInsetsControllerCompat controller =\n        WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());\n    controller.hide(WindowInsetsCompat.Type.systemBars());\n    controller.setSystemBarsBehavior(\n        WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);\n  }\n\n  @Override\n  protected void onCreate(Bundle savedInstanceState) {\n    super.onCreate(savedInstanceState);\n    WindowCompat.enableEdgeToEdge(getWindow());\n    getWindow().getDecorView().setBackgroundColor(Color.parseColor("${fullscreenBackground}"));\n    if (getBridge() != null && getBridge().getWebView() != null) {\n      getBridge().getWebView().setBackgroundColor(Color.parseColor("${fullscreenBackground}"));\n    }\n    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {\n      WindowManager.LayoutParams attributes = getWindow().getAttributes();\n      attributes.layoutInDisplayCutoutMode = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R\n          ? WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS\n          : WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;\n      getWindow().setAttributes(attributes);\n    }\n    hideSystemBars();\n  }\n\n  @Override\n  protected void onResume() {\n    super.onResume();\n    hideSystemBars();\n  }\n\n  @Override\n  public void onWindowFocusChanged(boolean hasFocus) {\n    super.onWindowFocusChanged(hasFocus);\n    if (hasFocus) hideSystemBars();\n  }\n}`
     );
     if (!source.includes('TWINE_BUILD_IMMERSIVE')) {
       console.error('[ERROR] 无法修改 MainActivity.java，Capacitor 模板结构可能已经变化。');

@@ -86,6 +86,7 @@ Edit `twine-build.json` in the repository root:
   },
   "android": {
     "immersive": true,
+    "fullscreenBackgroundColor": "#000000",
     "iconBackgroundColor": "#ffffff",
     "iconBackgroundColorDark": "#111111"
   },
@@ -130,6 +131,7 @@ Edit `twine-build.json` in the repository root:
 | Setting | Type | Default | Meaning |
 |---|---|---|---|
 | `android.immersive` | boolean | `true` | Hide status and navigation bars; edge swipes reveal them temporarily |
+| `android.fullscreenBackgroundColor` | color string | `#000000` | Fullscreen fallback color used around cutouts, during system-bar transitions, or before the WebView finishes drawing |
 | `android.iconBackgroundColor` | color string | `#ffffff` | Adaptive-icon background in light mode |
 | `android.iconBackgroundColorDark` | color string | `#111111` | Adaptive-icon background in dark mode; retained for compatibility with future dark-icon output |
 
@@ -326,7 +328,7 @@ Confirm that the files were uploaded inside `game/` and that the letter case of 
 
 ### Android shows system bars at the top or bottom
 
-Confirm that `android.immersive` is `true` and install an APK built after changing the setting. Immersive mode hides the status and navigation bars; swiping from a screen edge can still reveal system controls temporarily.
+Confirm that `android.immersive` is `true` and install a newly built APK. The builder enables edge-to-edge display, covers display cutouts, and adds `viewport-fit=cover` to the web viewport. Immersive mode hides the status and navigation bars; swiping from a screen edge can still reveal system controls temporarily. `android.fullscreenBackgroundColor` controls the edge color before the page finishes drawing.
 
 ### GitHub Actions did not run
 

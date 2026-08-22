@@ -19,6 +19,7 @@
   },
   "android": {
     "immersive": true,
+    "fullscreenBackgroundColor": "#000000",
     "iconBackgroundColor": "#ffffff",
     "iconBackgroundColorDark": "#111111"
   },

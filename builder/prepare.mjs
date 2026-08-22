@@ -100,6 +100,26 @@ if (path.resolve(sourcePath) !== path.resolve(output, 'index.html')) {
 }
 if (!fs.existsSync(path.join(output, 'index.html'))) fail('准备后缺少 dist-web/index.html。');
 
+const outputIndexPath = path.join(output, 'index.html');
+let outputHtml = fs.readFileSync(outputIndexPath, 'utf8');
+const viewportPattern = /<meta\s+[^>]*name=["']viewport["'][^>]*>/i;
+const viewportMatch = outputHtml.match(viewportPattern);
+if (viewportMatch) {
+  let viewportTag = viewportMatch[0];
+  const contentMatch = viewportTag.match(/content=(["'])(.*?)\1/i);
+  if (contentMatch && !/(?:^|,)\s*viewport-fit\s*=\s*cover(?:\s*,|$)/i.test(contentMatch[2])) {
+    const viewportContent = `${contentMatch[2].replace(/\s*,\s*$/, '')}, viewport-fit=cover`;
+    viewportTag = viewportTag.replace(contentMatch[0], `content=${contentMatch[1]}${viewportContent}${contentMatch[1]}`);
+    outputHtml = outputHtml.replace(viewportMatch[0], viewportTag);
+  }
+} else if (/<head(?:\s[^>]*)?>/i.test(outputHtml)) {
+  outputHtml = outputHtml.replace(
+    /<head(?:\s[^>]*)?>/i,
+    match => `${match}\n<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">`
+  );
+}
+fs.writeFileSync(outputIndexPath, outputHtml);
+
 const capConfig = {
   appId: config.appId,
   appName: config.name,
