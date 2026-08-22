@@ -6,7 +6,7 @@
   "description": "An interactive story built with Twine",
   "publisher": "demu",
   "source": "game/index.html",
-  "icon": "resources/icon.png",
+  "icon": "game/img/logo/logo.png",
   "targets": ["exe", "apk"],
   "window": {
     "width": 1280,
