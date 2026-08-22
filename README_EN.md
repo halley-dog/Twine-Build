@@ -193,6 +193,37 @@ The `windows-exe` artifact contains only one NSIS installer. GitHub always wraps
 
 Electron must include Chromium, so the installer is normally still around 80–130 MB even when the Twine HTML is small.
 
+## Windows EXE code signing
+
+Production Windows signing cannot use a public template key like the APK test flow. A public or self-signed certificate is not trusted by ordinary Windows systems, does not remove the SmartScreen “Unknown publisher” warning, and would let anyone impersonate the same publisher.
+
+The workflow uses automatic detection:
+
+- Neither `WIN_CSC_LINK` nor `WIN_CSC_KEY_PASSWORD` is configured: build an unsigned EXE normally.
+- Both are configured: Electron Builder signs the application, uninstaller, and final installer automatically.
+- Only one is configured: fail the build so an unsigned result is not mistaken for a signed one.
+
+For public distribution, use a Windows Authenticode code-signing certificate issued by a CA trusted by Microsoft, or Microsoft Azure Artifact Signing. Azure Public Trust has identity and geographic eligibility restrictions; otherwise, obtain a code-signing service from a trusted CA available in your region. A newly issued certificate normally still needs time to build SmartScreen reputation, so signing does not guarantee that every first download is warning-free.
+
+If your signing provider supplies an exportable `.pfx`/`.p12` file, convert it to single-line Base64 in PowerShell:
+
+```powershell
+$certificateFile = "E:\Twine-Signing\windows-code-signing.pfx"
+$certificateBase64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes($certificateFile))
+$certificateBase64 | Set-Clipboard
+```
+
+Add these repository secrets under **Settings → Secrets and variables → Actions**:
+
+| Secret | Value |
+|---|---|
+| `WIN_CSC_LINK` | Single-line Base64 content of the `.pfx`/`.p12` file |
+| `WIN_CSC_KEY_PASSWORD` | Certificate-file password |
+
+Run the EXE build again. Never commit the certificate, Base64 text, or password. Some newer code-signing products keep keys in hardware tokens or cloud services and cannot export a PFX; those products require the provider's dedicated GitHub Actions or cloud-signing integration instead of these two secrets.
+
+References: [Microsoft Windows code-signing options](https://learn.microsoft.com/windows/apps/package-and-deploy/code-signing-options) and [Electron Builder Windows signing](https://www.electron.build/docs/features/code-signing/code-signing-win/).
+
 ## Windows media protection
 
 When `windows.protectMedia` is enabled, images, audio, video, and fonts in the Windows package are encrypted with AES-256-GCM. At runtime, the application decrypts them on demand through its internal `twine://` protocol, without changing existing relative paths in the HTML. HTML, CSS, and JavaScript are not encrypted.
@@ -303,7 +334,7 @@ Open the **Actions** tab and confirm that workflows are enabled. GitHub may requ
 
 ### Windows shows “Unknown publisher”
 
-This is normal when the installer has not been signed with a commercial code-signing certificate. This project does not provide signing certificates for users.
+This is normal when the installer has not been signed with a publicly trusted code-signing certificate. Configure `WIN_CSC_LINK` and `WIN_CSC_KEY_PASSWORD`, then rebuild. A new certificate may still need time to establish SmartScreen reputation.
 
 ### The APK cannot update an older installation
 

@@ -43,6 +43,9 @@ jobs:
     if: github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == 'exe'
     runs-on: windows-latest
     timeout-minutes: 30
+    env:
+      WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+      WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
     steps:
       - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
@@ -53,6 +56,19 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci
+      - name: Validate Windows signing settings
+        shell: pwsh
+        run: |
+          $hasCertificate = -not [string]::IsNullOrWhiteSpace($env:WIN_CSC_LINK)
+          $hasPassword = -not [string]::IsNullOrWhiteSpace($env:WIN_CSC_KEY_PASSWORD)
+          if ($hasCertificate -ne $hasPassword) {
+            throw 'Windows signing is incomplete. Set both WIN_CSC_LINK and WIN_CSC_KEY_PASSWORD, or remove both to build unsigned.'
+          }
+          if ($hasCertificate) {
+            Write-Host '[OK] A custom Windows code-signing certificate is configured.'
+          } else {
+            Write-Warning 'No Windows code-signing certificate is configured; the installer will be unsigned.'
+          }
       - name: Validate and build EXE
         run: npm run build:exe
       - name: Upload Windows installer

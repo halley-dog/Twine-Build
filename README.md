@@ -193,6 +193,37 @@ resources/icon.png
 
 Electron 必须携带 Chromium，因此安装包通常仍有约 80–130 MB，即使 Twine HTML 很小也不会只有几 MB。
 
+## Windows EXE 代码签名
+
+Windows 正式签名不能像 APK 一样使用公开模板密钥。公开或自签名证书不受普通 Windows 电脑信任，无法消除 SmartScreen 的“未知发布者”提示，还会允许任何人冒充同一发布者。
+
+工作流采用自动模式：
+
+- `WIN_CSC_LINK` 和 `WIN_CSC_KEY_PASSWORD` 都未配置：正常生成未签名 EXE。
+- 两项都已配置：Electron Builder 自动签名程序、卸载程序和最终安装包。
+- 只配置一项：构建主动失败，防止误以为产物已签名。
+
+正式对外分发可选择受 Microsoft 信任的 CA 签发的 Windows Authenticode 代码签名证书，或使用 Microsoft Azure Artifact Signing。Azure 的 Public Trust 有身份和地区限制；不符合条件时应向支持所在地区的可信 CA 购买代码签名服务。新证书通常仍需逐渐积累 SmartScreen 信誉，签名不保证首次下载立刻没有警告。
+
+如果签名服务提供可导出的 `.pfx`/`.p12` 文件，在 PowerShell 转为单行 Base64：
+
+```powershell
+$certificateFile = "E:\Twine-Signing\windows-code-signing.pfx"
+$certificateBase64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes($certificateFile))
+$certificateBase64 | Set-Clipboard
+```
+
+在仓库的 **Settings → Secrets and variables → Actions** 添加：
+
+| Secret | 内容 |
+|---|---|
+| `WIN_CSC_LINK` | `.pfx`/`.p12` 文件的单行 Base64 内容 |
+| `WIN_CSC_KEY_PASSWORD` | 证书文件密码 |
+
+随后重新运行 EXE 构建即可。不要把证书、Base64 文本或密码提交到仓库。部分新代码签名证书使用硬件令牌或云端密钥，无法导出 PFX；这类证书需要供应商专用的 GitHub Actions/云签名集成，不能使用上述两个 Secrets。
+
+参考：[Microsoft Windows 代码签名方案](https://learn.microsoft.com/windows/apps/package-and-deploy/code-signing-options)、[Electron Builder Windows 签名](https://www.electron.build/docs/features/code-signing/code-signing-win/)。
+
 ## Windows 媒体保护
 
 启用 `windows.protectMedia` 后，图片、音频、视频和字体在 Windows 包内会使用 AES-256-GCM 加密，应用运行时通过内部 `twine://` 协议按需解密，不影响 HTML 中原有相对路径。HTML、CSS 和 JavaScript 不加密。
@@ -305,7 +336,7 @@ Settings → Secrets and variables → Actions
 
 ### Windows 显示未知发布者
 
-这是未使用商业代码签名证书时的正常提示。本项目不会替用户提供签名证书。
+这是未使用受信任的代码签名证书时的正常提示。配置 `WIN_CSC_LINK` 和 `WIN_CSC_KEY_PASSWORD` 后重新构建；新证书仍可能需要一段时间积累 SmartScreen 信誉。
 
 ### APK 无法覆盖旧版本
 
