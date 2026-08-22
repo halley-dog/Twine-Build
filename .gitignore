@@ -1,0 +1,14 @@
+node_modules/
+dist-web/
+release/
+android/
+capacitor.config.json
+/index.html
+*.log
+.DS_Store
+Thumbs.db
+signing/
+*.jks
+*.keystore
+*.pfx
+*.p12

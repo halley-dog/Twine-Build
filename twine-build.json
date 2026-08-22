@@ -1,0 +1,24 @@
+{
+  "name": "My Twine Story",
+  "executableName": "My-Twine-Story",
+  "appId": "com.example.mytwinestory",
+  "version": "1.0.0",
+  "description": "An interactive story built with Twine",
+  "publisher": "Twine Author",
+  "source": "game/index.html",
+  "icon": "resources/icon.png",
+  "targets": ["exe", "apk"],
+  "window": {
+    "width": 1280,
+    "height": 800,
+    "minWidth": 720,
+    "minHeight": 480,
+    "resizable": true,
+    "startMaximized": false,
+    "fullscreen": false
+  },
+  "security": {
+    "allowNetwork": false,
+    "openExternalLinks": true
+  }
+}

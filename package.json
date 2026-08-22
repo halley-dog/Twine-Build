@@ -1,0 +1,22 @@
+{
+  "name": "twine-webbuild-template",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Build a Twine story as Windows EXE or Android APK with GitHub Actions.",
+  "main": "builder/electron/main.cjs",
+  "type": "module",
+  "scripts": {
+    "prepare:web": "node builder/prepare.mjs",
+    "check": "node builder/prepare.mjs --check-only",
+    "build:exe": "npm run prepare:web && electron-builder --win nsis zip --x64 --config builder/electron-builder.cjs",
+    "android:init": "npx cap add android",
+    "android:sync": "npx cap sync android"
+  },
+  "devDependencies": {
+    "@capacitor/android": "8.5.0",
+    "@capacitor/cli": "8.5.0",
+    "@capacitor/core": "8.5.0",
+    "electron": "43.4.1",
+    "electron-builder": "26.15.3"
+  }
+}

@@ -1,0 +1,116 @@
+name: Build Twine packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Build target
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - exe
+          - apk
+  push:
+    branches: [main]
+    paths:
+      - game/**
+      - resources/**
+      - builder/**
+      - twine-build.json
+      - package.json
+      - package-lock.json
+      - .github/workflows/build.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: twine-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  exe:
+    if: github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == 'exe'
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Validate and build EXE
+        run: npm run build:exe
+      - name: Upload EXE and portable ZIP
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: windows-exe
+          path: release/exe/*
+          if-no-files-found: error
+          retention-days: 14
+
+  apk:
+    if: github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == 'apk'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+          cache: npm
+      - name: Set up Java
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Prepare web files
+        run: npm run prepare:web
+      - name: Generate Android project
+        run: npx cap add android
+      - name: Build installable debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug
+      - name: Build unsigned release APK
+        if: env.ANDROID_KEYSTORE_BASE64 != ''
+        working-directory: android
+        run: ./gradlew assembleRelease
+      - name: Sign release APK
+        if: env.ANDROID_KEYSTORE_BASE64 != ''
+        shell: bash
+        run: |
+          mkdir -p release/apk signing
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > signing/release.jks
+          BUILD_TOOLS="$(find "$ANDROID_SDK_ROOT/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          "$BUILD_TOOLS/zipalign" -p -f 4 android/app/build/outputs/apk/release/app-release-unsigned.apk release/apk/app-release-aligned.apk
+          "$BUILD_TOOLS/apksigner" sign --ks signing/release.jks --ks-key-alias "$ANDROID_KEY_ALIAS" --ks-pass "env:ANDROID_KEYSTORE_PASSWORD" --key-pass "env:ANDROID_KEY_PASSWORD" --out release/apk/app-release.apk release/apk/app-release-aligned.apk
+          "$BUILD_TOOLS/apksigner" verify --verbose release/apk/app-release.apk
+          rm -rf signing release/apk/app-release-aligned.apk
+      - name: Collect debug APK
+        shell: bash
+        run: |
+          mkdir -p release/apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk release/apk/app-debug.apk
+          cp dist-web/build-report.json release/apk/build-report.json
+      - name: Upload APK
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: android-apk
+          path: release/apk/*
+          if-no-files-found: error
+          retention-days: 14
