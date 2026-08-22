@@ -179,6 +179,8 @@ resources/icon.png
 | `debug` | Android 调试构建，不读取自定义签名 | `app-debug.apk` |
 | `release` | 优化的 release 构建；优先使用用户签名，否则使用公开模板测试签名 | `app-release.apk` 或 `app-release-test-signed.apk` |
 
+手动运行默认选择 `debug`；推送到 `main` 自动触发时默认构建 `release`。
+
 5. 构建完成后，在运行页面底部的 **Artifacts** 下载结果。
 
 Artifact 默认保留 14 天：

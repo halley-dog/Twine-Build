@@ -179,6 +179,8 @@ When the target includes APK, also choose `apk_variant`:
 | `debug` | Android debug build; custom signing settings are ignored | `app-debug.apk` |
 | `release` | Optimized release build; uses the user's key when available, otherwise the public template test key | `app-release.apk` or `app-release-test-signed.apk` |
 
+Manual runs default to `debug`; pushes to `main` automatically build `release`.
+
 5. When the build finishes, download the results from **Artifacts** at the bottom of the workflow run page.
 
 Artifacts are retained for 14 days by default:
