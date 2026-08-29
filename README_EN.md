@@ -15,7 +15,7 @@ Users do not need to install Node.js, Electron, Android Studio, Java, Visual Stu
 
 - In Twine, select **Build → Publish to File**, then upload the generated HTML file.
 - Upload images, music, videos, fonts, and scripts together with the HTML while preserving their original relative paths.
-- APK builds can be `debug` or `release`; release prefers the user's signing key and otherwise uses the public template test key.
+- APK builds can be `debug` or `release`; release requires the repository owner's signing key in GitHub Actions Secrets.
 - Without Windows code signing, the EXE still runs, but SmartScreen may show an “Unknown publisher” warning.
 - Use a private GitHub repository for private or unreleased stories.
 
@@ -108,6 +108,7 @@ Edit `twine-build.json` in the repository root:
 | `executableName` | string | `My-Twine-Story` | Windows executable and installer filename without an extension; letters, numbers, `-`, and `_` are recommended |
 | `appId` | string | `com.example.mytwinestory` | Unique Android identity and update identifier; use reverse-domain notation and never change it after release |
 | `version` | string | `1.0.0` | Application version in `major.minor.patch` format |
+| `versionCode` | integer | `1` | Android internal version; increase it for every release |
 | `description` | string | example text | Short application description stored in Windows package metadata |
 | `publisher` | string | `Twine Author` | Author, publisher, or studio name stored in Windows metadata |
 | `source` | path | `game/index.html` | Twine-published HTML entry point, relative to the repository root |
@@ -244,11 +245,8 @@ The debug package is installable for testing, but is not suitable for app stores
 
 Selecting `apk_variant: release` always produces a zipaligned, signed, and verified release APK:
 
-- When all four signing secrets exist, the user's key is used and the output is `app-release.apk`.
-- When none of the secrets exist, the repository's fixed public test key is used and the output is `app-release-test-signed.apk`.
-- Supplying only some secrets fails the build to prevent accidental mis-signing.
-
-The public test key only gives zero-configuration users a stable identity for installing later test builds over earlier ones. Its private key is visible to everyone, cannot prove authorship, and must never be used for an app store, production release, or any trusted-identity purpose.
+- All four signing secrets are required and the output is `app-release.apk`.
+- If any signing secret is absent, the release build fails instead of using an unsuitable fallback key.
 
 ### Generate a production signing key on Windows
 
@@ -314,7 +312,7 @@ Settings → Secrets and variables → Actions
 
 After all secrets are configured, the release workflow creates and verifies `app-release.apk`. Keep encrypted, permanent backups of the keystore and passwords. Future updates to the same application must continue to use a compatible signing key. Android will normally require uninstalling the test-key build when switching to your production key.
 
-Never commit your own `.jks`, `.keystore`, `.pfx`, or password files. The repository's `resources/template-test-signing.pfx` is an intentionally public template test key, not a secret.
+Never commit your own `.jks`, `.keystore`, `.pfx`, Base64 key export, or password files.
 
 ## Network resources and offline use
 

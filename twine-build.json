@@ -3,6 +3,7 @@
   "executableName": "My-Twine-Story",
   "appId": "com.example.mytwinestory",
   "version": "1.0.0",
+  "versionCode": 1,
   "description": "An interactive story built with Twine",
   "publisher": "Twine Author",
   "source": "game/index.html",

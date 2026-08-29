@@ -11,6 +11,29 @@ if (!fs.existsSync(androidRoot)) {
   process.exit(1);
 }
 
+const appBuildGradlePath = path.join(androidRoot, 'app', 'build.gradle');
+if (!fs.existsSync(appBuildGradlePath)) {
+  console.error('[ERROR] Cannot find android/app/build.gradle.');
+  process.exit(1);
+}
+if (!Number.isInteger(config.versionCode) || config.versionCode < 1) {
+  console.error('[ERROR] versionCode must be a positive integer.');
+  process.exit(1);
+}
+
+let appBuildGradle = fs.readFileSync(appBuildGradlePath, 'utf8');
+const versionCodePattern = /^(\s*)versionCode\s+\d+\s*$/m;
+const versionNamePattern = /^(\s*)versionName\s+["'][^"']+["']\s*$/m;
+if (!versionCodePattern.test(appBuildGradle) || !versionNamePattern.test(appBuildGradle)) {
+  console.error('[ERROR] Cannot locate versionCode/versionName in the Capacitor Android template.');
+  process.exit(1);
+}
+appBuildGradle = appBuildGradle
+  .replace(versionCodePattern, `$1versionCode ${config.versionCode}`)
+  .replace(versionNamePattern, `$1versionName "${config.version}"`);
+fs.writeFileSync(appBuildGradlePath, appBuildGradle);
+console.log(`[OK] Android versionCode=${config.versionCode}, versionName=${config.version}`);
+
 function findFile(directory, filename) {
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
     const fullPath = path.join(directory, entry.name);

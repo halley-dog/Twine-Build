@@ -27,6 +27,9 @@ for (const key of ['name', 'appId', 'version', 'source']) {
 if (config.version && !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(config.version)) {
   fail('version 必须采用 1.2.3 形式。');
 }
+if (!Number.isInteger(config.versionCode) || config.versionCode < 1) {
+  fail('versionCode must be a positive integer and increase for every Android release.');
+}
 if (config.appId && !/^[a-zA-Z][a-zA-Z0-9_]*(?:\.[a-zA-Z][a-zA-Z0-9_]*)+$/.test(config.appId)) {
   fail('appId 必须采用 com.example.story 形式，且发布后不要更改。');
 }
@@ -132,6 +135,7 @@ const digest = crypto.createHash('sha256').update(fs.readFileSync(path.join(outp
 const report = {
   name: config.name,
   version: config.version,
+  versionCode: config.versionCode,
   appId: config.appId,
   source: config.source,
   sourceSha256: digest,

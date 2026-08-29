@@ -13,3 +13,6 @@ signing/
 *.keystore
 *.pfx
 *.p12
+keystore-base64.txt
+*.base64
+*.b64
